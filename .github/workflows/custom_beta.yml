@@ -1,0 +1,305 @@
+name: '[CUSTOM-BETA] Create YouTube Plus app'
+
+on:
+  workflow_dispatch:
+    inputs:
+      enable_other_tweaks:
+        description: "Inject Tweaks"
+        type: boolean
+        required: true
+        default: true
+      create_cyan:
+        description: "Generate .cyan file"
+        type: boolean
+        required: true
+        default: false
+      create_tf:
+        description: "Generate .zip for TrollFools"
+        type: boolean
+        required: true
+        default: false
+      ipa_url:
+        description: "URL to the decrypted IPA file"
+        default: ""
+        required: true
+        type: string
+      deb_url:
+        description: "URL to YTLite DEB file"
+        default: ""
+        required: true
+        type: string
+      tweak_version:
+        description: "The version of the tweak to use. Enter the version manually from dayanch96/YTLite/releases or leave default"
+        default: "5.2b4"
+        required: true
+        type: string
+      display_name:
+        description: "App Name (Optional)"
+        default: "YouTube"
+        required: true
+        type: string
+      bundle_id:
+        description: "BundleID (Optional)"
+        default: "com.google.ios.youtube"
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build YouTube Plus
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Main
+        uses: actions/checkout@v4.2.2
+        with:
+          path: main
+          submodules: recursive
+
+      - name: Set current datetime as env variable
+        env:
+          TZ: 'Asia/Tokyo'
+        run: |
+          echo "current_date=$(date +'%Y/%m/%d')" >> $GITHUB_ENV
+          echo "current_date_no_slash=$(date +'%Y%m%d')" >> $GITHUB_ENV
+
+      - name: Hide sensitive inputs
+        uses: levibostian/action-hide-sensitive-inputs@v1
+        with:
+          exclude_inputs: bundle_id,display_name,enable_other_tweaks,info_note,tweak_version
+
+      - name: Download and Validate IPA
+        run: |
+          wget "${{ inputs.ipa_url }}" --no-verbose -O ${{ github.workspace }}/youtube.ipa
+
+          file_type=$(file --mime-type -b ${{ github.workspace }}/youtube.ipa)
+
+          if [[ "$file_type" != "application/x-ios-app" && "$file_type" != "application/zip" ]]; then
+            echo "::error::Validation failed: The downloaded file is not a valid IPA. Detected type: $file_type."
+            exit 1
+          fi
+
+          unzip -q youtube.ipa
+          youtube_version=$(defaults read "$(pwd)/Payload/YouTube.app/Info" CFBundleVersion)
+          echo "youtube_version=${youtube_version}" >> $GITHUB_ENV
+          rm -r ${{ github.workspace }}/Payload
+
+      - name: Install Dependencies
+        run: brew install make ldid dpkg
+
+      - name: Set PATH environment variable
+        run: echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
+
+      - name: Cache Theos
+        if: ${{ inputs.enable_other_tweaks }}
+        id: theos
+        uses: actions/cache@v4
+        env:
+          cache-name: theos_cache_67db2ab
+        with:
+          path: theos/
+          key: ${{ env.cache-name }}
+          restore-keys: ${{ env.cache-name }}
+
+      - name: Setup Theos
+        if: ${{ inputs.enable_other_tweaks && steps.theos.outputs.cache-hit != 'true' }}
+        uses: actions/checkout@v4.2.2
+        with:
+          repository: theos/theos
+          ref: 67db2ab8d950910161730de77c322658ea3e6b44
+          path: ${{ github.workspace }}/theos
+          submodules: recursive
+
+      - name: Download iOS SDK
+        if: ${{ inputs.enable_other_tweaks && steps.theos.outputs.cache-hit != 'true' }}
+        run: |
+          git clone --quiet -n --depth=1 --filter=tree:0 https://github.com/theos/sdks/
+          cd sdks
+          git sparse-checkout set --no-cone iPhoneOS16.5.sdk
+          git checkout
+          mv *.sdk $THEOS/sdks
+        env:
+          THEOS: ${{ github.workspace }}/theos
+
+      - name: Install cyan
+        run: pipx install --force https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
+
+      - name: Download YouTube Plus
+        id: download_ytp
+        run: |
+          wget "${{ inputs.deb_url }}" --no-verbose -O ${{ github.workspace }}/ytplus.deb
+
+      - name: Clone Open in YouTube (Safari extension)
+        run: |
+          git clone --quiet -n --depth=1 --filter=tree:0 https://github.com/CokePokes/YoutubeExtensions/
+          cd YoutubeExtensions
+          git sparse-checkout set --no-cone OpenYoutubeSafariExtension.appex
+          git checkout
+          mv *.appex ${{ github.workspace }}
+
+      - name: Clone YouTubeHeader
+        if: ${{ inputs.enable_other_tweaks }}
+        run: |
+          if [ -d "$THEOS/include/YouTubeHeader" ]; then
+            echo "YouTubeHeader exists. Pulling latest changes..."
+            cd $THEOS/include/YouTubeHeader
+            git pull
+          else
+            echo "YouTubeHeader does not exist. Cloning repository..."
+            cd $THEOS/include
+            git clone --quiet --depth=1 https://github.com/PoomSmart/YouTubeHeader.git
+          fi
+
+          if [ "${{ inputs.enable_other_tweaks }}" = "true" ]; then
+            echo "Copying YouTubeHeader to YTHeaders..."
+            rm -rf "$THEOS/include/YTHeaders"
+            cp -r "$THEOS/include/YouTubeHeader" "$THEOS/include/YTHeaders"
+          fi
+        env:
+          THEOS: ${{ github.workspace }}/theos
+
+      - name: Clone PSHeader
+        if: ${{ inputs.enable_other_tweaks }}
+        run: |
+          if [ -d "$THEOS/include/PSHeader" ]; then
+            echo "PSHeader exists. Pulling latest changes..."
+            cd $THEOS/include/PSHeader
+            git pull
+          else
+            echo "PSHeader does not exist. Cloning repository..."
+            cd $THEOS/include
+            git clone --quiet --depth=1 https://github.com/PoomSmart/PSHeader.git
+          fi
+        env:
+          THEOS: ${{ github.workspace }}/theos
+
+      - name: Clone Tweaks
+        if: ${{ inputs.enable_other_tweaks }}
+        run: |
+          cd ${{ github.workspace }}
+          git clone --quiet --depth=1 --recurse-submodules https://github.com/therealFoxster/DontEatMyContent.git
+          git clone --quiet --depth=1 https://github.com/castdrian/Gonerino.git
+          git clone --quiet --depth=1 https://github.com/PoomSmart/Return-YouTube-Dislikes.git
+          git clone --quiet --depth=1 https://github.com/PoomSmart/YouGroupSettings.git
+          git clone --quiet --depth=1 https://github.com/WhiteNightChan/YouLoop.git
+          git clone --quiet --depth=1 https://github.com/PoomSmart/YouPiP.git
+          git clone --quiet --depth=1 https://github.com/PoomSmart/YouQuality.git
+          : git clone --quiet --depth=1 https://github.com/WhiteNightChan/YTAppVersionSpoofer.git
+          git clone --quiet --depth=1 https://github.com/Tonwalter888/YTUHD.git
+          git clone --quiet --depth=1 https://github.com/PoomSmart/YTVideoOverlay.git
+
+      - name: Build Tweaks
+        if: ${{ inputs.enable_other_tweaks }}
+        run: |
+          cd ${{ github.workspace }}/DontEatMyContent
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/demc.deb
+          cd ${{ github.workspace }}/Gonerino
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/gonerino.deb
+          cd ${{ github.workspace }}/Return-YouTube-Dislikes
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/ryd.deb
+          cd ${{ github.workspace }}/YouGroupSettings
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/ygs.deb
+          cd ${{ github.workspace }}/YouLoop
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/yl.deb
+          cd ${{ github.workspace }}/YouPiP
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/youpip.deb
+          cd ${{ github.workspace }}/YouQuality
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/yq.deb
+          cd ${{ github.workspace }}/YTUHD
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/ytuhd.deb
+          : cd ${{ github.workspace }}/YTAppVersionSpoofer
+          : make clean package DEBUG=0 FINALPACKAGE=1
+          : mv packages/*.deb ${{ github.workspace }}/ytavs.deb
+          cd ${{ github.workspace }}/YTVideoOverlay
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/ytvo.deb
+        env:
+          THEOS: ${{ github.workspace }}/theos
+
+      - name: Inject tweaks into IPA
+        run: |
+          tweaks="ytplus.deb OpenYoutubeSafariExtension.appex"
+
+          for i in *.deb; do
+            if [ -f "$i" ]; then
+              tweaks="$tweaks $i"
+            fi
+          done
+
+          cyan -i youtube.ipa -o YouTubePlus_${{ env.youtube_version }}_${{ inputs.tweak_version }}_${{ env.current_date_no_slash }}.ipa -uwef $tweaks -n "${{ inputs.display_name }}" -b ${{ inputs.bundle_id }}
+
+      - name: Generate .cyan file
+        if: ${{ inputs.create_cyan }}
+        run: |
+          tweaks="ytplus.deb OpenYoutubeSafariExtension.appex"
+
+          for i in *.deb; do
+            if [ -f "$i" ]; then
+              tweaks="$tweaks $i"
+            fi
+          done
+
+          cgen -uwef $tweaks -n "${{ inputs.display_name }}" -b ${{ inputs.bundle_id }} -o cyan_YouTubePlus_${{ inputs.tweak_version }}_${{ env.current_date_no_slash }}.cyan
+
+      - name: Generate .zip file for TrollFools
+        if: ${{ inputs.create_tf }}
+        run: |
+          mkdir -p ytp_tf
+
+          for i in *.deb; do
+            if [ -f "$i" ]; then
+              echo "Extracting $i..."
+              mkdir -p tmp_deb
+              dpkg-deb -x "$i" tmp_deb
+              find tmp_deb -type f -name "*.dylib" -exec cp -R {} ytp_tf/ \;
+              find tmp_deb -type d -name "*.bundle" -exec cp -R {} ytp_tf/ \;
+              rm -rf tmp_deb
+            fi
+          done
+
+          echo "Zipping..."
+          cd ytp_tf
+          zip -r "../TrollFools_YouTubePlus_${{ inputs.tweak_version }}_${{ env.current_date_no_slash }}.zip" .
+          cd ..
+          rm -rf ytp_tf
+
+      - name: Set output file list
+        id: filelist
+        run: |
+          files=""
+          files="${files}YouTubePlus_${{ env.youtube_version }}_${{ inputs.tweak_version }}_${{ env.current_date_no_slash }}.ipa"$'\n'
+          if [ "${{ inputs.create_cyan }}" = "true" ]; then
+            files="${files}cyan_YouTubePlus_${{ inputs.tweak_version }}_${{ env.current_date_no_slash }}.cyan"$'\n'
+          fi
+          if [ "${{ inputs.create_tf }}" = "true" ]; then
+            files="${files}TrollFools_YouTubePlus_${{ inputs.tweak_version }}_${{ env.current_date_no_slash }}.zip"$'\n'
+          fi
+          echo -e "files<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$files" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Upload to GitHub Releases
+        uses: softprops/action-gh-release@v2.3.2
+        with:
+          tag_name: v${{ inputs.tweak_version }}
+          name: ${{ env.current_date }} - YouTubePlus v${{ inputs.tweak_version }}
+          files: ${{ steps.filelist.outputs.files }}
+          draft: true
+
+      - name: Output Release URL
+        run: |
+          echo "::notice::Release available at: https://github.com/${{ github.repository }}/releases"
