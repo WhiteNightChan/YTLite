@@ -190,6 +190,8 @@ jobs:
           git clone --quiet --depth=1 https://github.com/WhiteNightChan/YouLoop.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YouPiP.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YouQuality.git
+          git clone --quiet --depth=1 https://github.com/PoomSmart/YTABConfig.git
+          git clone --quiet --depth=1 https://github.com/PoomSmart/YTIcons.git
           : git clone --quiet --depth=1 https://github.com/WhiteNightChan/YTAppVersionSpoofer.git
           git clone --quiet --depth=1 https://github.com/Tonwalter888/YTUHD.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YTVideoOverlay.git
@@ -218,12 +220,18 @@ jobs:
           cd ${{ github.workspace }}/YouQuality
           make clean package DEBUG=0 FINALPACKAGE=1
           mv packages/*.deb ${{ github.workspace }}/yq.deb
-          cd ${{ github.workspace }}/YTUHD
+          cd ${{ github.workspace }}/YTABConfig
           make clean package DEBUG=0 FINALPACKAGE=1
-          mv packages/*.deb ${{ github.workspace }}/ytuhd.deb
+          mv packages/*.deb ${{ github.workspace }}/ytabc.deb
+          cd ${{ github.workspace }}/YTIcons
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/yti.deb
           : cd ${{ github.workspace }}/YTAppVersionSpoofer
           : make clean package DEBUG=0 FINALPACKAGE=1
           : mv packages/*.deb ${{ github.workspace }}/ytavs.deb
+          cd ${{ github.workspace }}/YTUHD
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/ytuhd.deb
           cd ${{ github.workspace }}/YTVideoOverlay
           make clean package DEBUG=0 FINALPACKAGE=1
           mv packages/*.deb ${{ github.workspace }}/ytvo.deb
@@ -240,7 +248,7 @@ jobs:
             fi
           done
 
-          cyan -i youtube.ipa -o YouTubePlus_${{ env.youtube_version }}_${{ inputs.tweak_version }}_${{ env.current_date_no_slash }}.ipa -uwef $tweaks -n "${{ inputs.display_name }}" -b ${{ inputs.bundle_id }}
+          cyan -i youtube.ipa -o YouTubePlus_v${{ env.youtube_version }}_${{ inputs.tweak_version }}_${{ env.current_date_no_slash }}.ipa -uwef $tweaks -n "${{ inputs.display_name }}" -b ${{ inputs.bundle_id }}
 
       - name: Generate .cyan file
         if: ${{ inputs.create_cyan }}
@@ -281,7 +289,7 @@ jobs:
         id: filelist
         run: |
           files=""
-          files="${files}YouTubePlus_${{ env.youtube_version }}_${{ inputs.tweak_version }}_${{ env.current_date_no_slash }}.ipa"$'\n'
+          files="${files}YouTubePlus_v${{ env.youtube_version }}_${{ inputs.tweak_version }}_${{ env.current_date_no_slash }}.ipa"$'\n'
           if [ "${{ inputs.create_cyan }}" = "true" ]; then
             files="${files}cyan_YouTubePlus_${{ inputs.tweak_version }}_${{ env.current_date_no_slash }}.cyan"$'\n'
           fi
@@ -296,7 +304,7 @@ jobs:
         uses: softprops/action-gh-release@v2.3.2
         with:
           tag_name: v${{ inputs.tweak_version }}
-          name: ${{ env.current_date }} - YouTubePlus v${{ inputs.tweak_version }}
+          name: ${{ env.current_date }} - v${{ env.youtube_version }} YouTubePlus v${{ inputs.tweak_version }}
           files: ${{ steps.filelist.outputs.files }}
           draft: true
 
