@@ -25,7 +25,7 @@ on:
         type: string
       deb_url:
         description: "URL to YTLite DEB file"
-        default: "https://github.com/dayanch96/YTLite/releases/download/5.2b4/com.dvntm.ytlite_5.2b4_iphoneos-arm.deb"
+        default: "https://github.com/dayanch96/YTLite/releases/download/v5.2b4/com.dvntm.ytlite_5.2b4_iphoneos-arm.deb"
         required: true
         type: string
       tweak_version:
