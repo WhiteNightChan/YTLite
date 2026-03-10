@@ -179,15 +179,15 @@ jobs:
         if: ${{ inputs.enable_other_tweaks }}
         run: |
           cd ${{ github.workspace }}
-          git clone --quiet --depth=1 --recurse-submodules https://github.com/therealFoxster/DontEatMyContent.git
-          git clone --quiet --depth=1 https://github.com/castdrian/Gonerino.git
+          : git clone --quiet --depth=1 --recurse-submodules https://github.com/therealFoxster/DontEatMyContent.git
+          git clone --quiet --depth=1 -b regex https://github.com/WhiteNightChan/Gonerino.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/Return-YouTube-Dislikes.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YouGroupSettings.git
           git clone --quiet --depth=1 https://github.com/WhiteNightChan/YouLoop.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YouPiP.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YouQuality.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YTABConfig.git
-          git clone --quiet --depth=1 https://github.com/PoomSmart/YTIcons.git
+          : git clone --quiet --depth=1 https://github.com/PoomSmart/YTIcons.git
           : git clone --quiet --depth=1 https://github.com/WhiteNightChan/YTAppVersionSpoofer.git
           git clone --quiet --depth=1 https://github.com/Tonwalter888/YTUHD.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YTVideoOverlay.git
@@ -195,9 +195,9 @@ jobs:
       - name: Build Tweaks
         if: ${{ inputs.enable_other_tweaks }}
         run: |
-          cd ${{ github.workspace }}/DontEatMyContent
-          make clean package DEBUG=0 FINALPACKAGE=1
-          mv packages/*.deb ${{ github.workspace }}/demc.deb
+          : cd ${{ github.workspace }}/DontEatMyContent
+          : make clean package DEBUG=0 FINALPACKAGE=1
+          : mv packages/*.deb ${{ github.workspace }}/demc.deb
           cd ${{ github.workspace }}/Gonerino
           make clean package DEBUG=0 FINALPACKAGE=1
           mv packages/*.deb ${{ github.workspace }}/gonerino.deb
@@ -219,9 +219,9 @@ jobs:
           cd ${{ github.workspace }}/YTABConfig
           make clean package DEBUG=0 FINALPACKAGE=1
           mv packages/*.deb ${{ github.workspace }}/ytabc.deb
-          cd ${{ github.workspace }}/YTIcons
-          make clean package DEBUG=0 FINALPACKAGE=1
-          mv packages/*.deb ${{ github.workspace }}/yti.deb
+          : cd ${{ github.workspace }}/YTIcons
+          : make clean package DEBUG=0 FINALPACKAGE=1
+          : mv packages/*.deb ${{ github.workspace }}/yti.deb
           : cd ${{ github.workspace }}/YTAppVersionSpoofer
           : make clean package DEBUG=0 FINALPACKAGE=1
           : mv packages/*.deb ${{ github.workspace }}/ytavs.deb
