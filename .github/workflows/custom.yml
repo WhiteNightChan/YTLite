@@ -180,7 +180,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           : git clone --quiet --depth=1 --recurse-submodules https://github.com/therealFoxster/DontEatMyContent.git
-          git clone --quiet --depth=1 -b regex https://github.com/WhiteNightChan/Gonerino.git
+          git clone --quiet --depth=1 -b new_option https://github.com/WhiteNightChan/Gonerino.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/Return-YouTube-Dislikes.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YouGroupSettings.git
           git clone --quiet --depth=1 https://github.com/WhiteNightChan/YouLoop.git
