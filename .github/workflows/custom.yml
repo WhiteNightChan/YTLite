@@ -3,13 +3,8 @@ name: '[CUSTOM] Create YouTube Plus app'
 on:
   workflow_dispatch:
     inputs:
-      enable_gonerino:
-        description: "Inject Gonerino"
-        type: boolean
-        required: true
-        default: true
-      enable_other_tweaks:
-        description: "Inject All Other Tweaks"
+      enable_tweaks:
+        description: "Inject Tweaks"
         type: boolean
         required: true
         default: true
@@ -82,7 +77,7 @@ jobs:
       - name: Hide sensitive inputs
         uses: levibostian/action-hide-sensitive-inputs@v1
         with:
-          exclude_inputs: bundle_id,display_name,enable_other_tweaks,info_note,tweak_version
+          exclude_inputs: bundle_id,display_name,enable_tweaks,info_note,tweak_version
 
       - name: Download and Validate IPA
         run: |
@@ -110,7 +105,7 @@ jobs:
           echo "THEOS=${{ github.workspace }}/theos" >> $GITHUB_ENV
 
       - name: Cache Theos
-        if: ${{ inputs.enable_gonerino || inputs.enable_other_tweaks }}
+        if: ${{ inputs.enable_tweaks }}
         id: theos
         uses: actions/cache@v5
         env:
@@ -121,7 +116,7 @@ jobs:
           restore-keys: ${{ env.cache-name }}
 
       - name: Setup Theos
-        if: ${{ (inputs.enable_gonerino || inputs.enable_other_tweaks) && steps.theos.outputs.cache-hit != 'true' }}
+        if: ${{ inputs.enable_tweaks && steps.theos.outputs.cache-hit != 'true' }}
         uses: actions/checkout@v6
         with:
           repository: theos/theos
@@ -130,7 +125,7 @@ jobs:
           submodules: recursive
 
       - name: Download iOS SDK
-        if: ${{ (inputs.enable_gonerino || inputs.enable_other_tweaks) && steps.theos.outputs.cache-hit != 'true' }}
+        if: ${{ inputs.enable_tweaks && steps.theos.outputs.cache-hit != 'true' }}
         run: |
           git clone --quiet -n --depth=1 --filter=tree:0 https://github.com/theos/sdks/
           cd sdks
@@ -158,20 +153,20 @@ jobs:
           fi
 
       - name: Clone YouTubeHeader
-        if: ${{ inputs.enable_gonerino || inputs.enable_other_tweaks }}
+        if: ${{ inputs.enable_tweaks }}
         run: |
           if [ -d "$THEOS/include/YouTubeHeader" ]; then
             cd $THEOS/include/YouTubeHeader && git pull
           else
             cd $THEOS/include && git clone --quiet --depth=1 https://github.com/PoomSmart/YouTubeHeader.git
           fi
-          if [ "${{ inputs.enable_other_tweaks }}" = "true" ]; then
+          if [ "${{ inputs.enable_tweaks }}" = "true" ]; then
             rm -rf "$THEOS/include/YTHeaders"
             cp -r "$THEOS/include/YouTubeHeader" "$THEOS/include/YTHeaders"
           fi
 
       - name: Clone PSHeader
-        if: ${{ inputs.enable_gonerino || inputs.enable_other_tweaks }}
+        if: ${{ inputs.enable_tweaks }}
         run: |
           if [ -d "$THEOS/include/PSHeader" ]; then
             cd $THEOS/include/PSHeader && git pull
@@ -189,10 +184,10 @@ jobs:
           mv *.appex ..
 
       - name: Clone Tweaks
-        if: ${{ inputs.enable_gonerino || inputs.enable_other_tweaks }}
+        if: ${{ inputs.enable_tweaks }}
         run: |
           # git clone --quiet --depth=1 --recurse-submodules https://github.com/therealFoxster/DontEatMyContent.git
-          [ "${{ inputs.enable_gonerino }}" = "true" ] && git clone --quiet --depth=1 https://github.com/WhiteNightChan/Gonerino.git
+          git clone --quiet -b test --depth=1 https://github.com/WhiteNightChan/NoThankYouTube.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/Return-YouTube-Dislikes.git
           git clone --quiet --depth=1 https://github.com/WhiteNightChan/YouGroupSettings.git
           git clone --quiet --depth=1 https://github.com/bhackel/YouLoop.git
@@ -208,10 +203,10 @@ jobs:
           git clone --quiet --depth=1 https://github.com/fosterbarnes/YTweaks.git
 
       - name: Build Tweaks
-        if: ${{ inputs.enable_gonerino || inputs.enable_other_tweaks }}
+        if: ${{ inputs.enable_tweaks }}
         run: |
           # (cd DontEatMyContent && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../demc.deb)
-          [ "${{ inputs.enable_gonerino }}" = "true" ] && (cd Gonerino && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../gonerino.deb)
+          (cd NoThankYouTube && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ntyt.deb)
           (cd Return-YouTube-Dislikes && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ryd.deb)
           (cd YouGroupSettings && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ygs.deb)
           (cd YouLoop && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../yl.deb)
