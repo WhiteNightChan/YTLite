@@ -56,7 +56,7 @@ concurrency:
 jobs:
   build:
     name: Build YouTube Plus
-    runs-on: macos-latest
+    runs-on: macos-15
     permissions:
       contents: write
 
@@ -158,7 +158,7 @@ jobs:
           if [ -d "$THEOS/include/YouTubeHeader" ]; then
             cd $THEOS/include/YouTubeHeader && git pull
           else
-            cd $THEOS/include && git clone --quiet --depth=1 https://github.com/PoomSmart/YouTubeHeader.git
+            cd $THEOS/include && git clone --quiet --depth=1 https://github.com/WhiteNightChan/YouTubeHeader.git
           fi
           if [ "${{ inputs.enable_tweaks }}" = "true" ]; then
             rm -rf "$THEOS/include/YTHeaders"
@@ -194,6 +194,7 @@ jobs:
           git clone --quiet --depth=1 https://github.com/PoomSmart/YouMute.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YouPiP.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YouQuality.git
+          git clone --quiet --depth=1 https://github.com/PoomSmart/YouTube-X.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YTABConfig.git
           git clone --quiet --depth=1 https://github.com/WhiteNightChan/YTAppVersionSpoofer.git
           git clone --quiet --depth=1 https://github.com/WhiteNightChan/YTClassicDarkTheme.git
@@ -213,6 +214,7 @@ jobs:
           (cd YouMute && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ym.deb)
           (cd YouPiP && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../youpip.deb)
           (cd YouQuality && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../yq.deb)
+          (cd YouTube-X && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytx.deb)
           (cd YTABConfig && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytabc.deb)
           (cd YTAppVersionSpoofer && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytavs.deb)
           (cd YTClassicDarkTheme && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytcdt.deb)
