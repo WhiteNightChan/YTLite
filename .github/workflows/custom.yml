@@ -187,7 +187,7 @@ jobs:
         if: ${{ inputs.enable_tweaks }}
         run: |
           # git clone --quiet --depth=1 --recurse-submodules https://github.com/therealFoxster/DontEatMyContent.git
-          git clone --quiet -b test --depth=1 https://github.com/WhiteNightChan/NoThankYouTube.git
+          git clone --quiet -b release --depth=1 https://github.com/WhiteNightChan/NoThankYouTube.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/Return-YouTube-Dislikes.git
           git clone --quiet --depth=1 https://github.com/WhiteNightChan/YouGroupSettings.git
           git clone --quiet --depth=1 https://github.com/bhackel/YouLoop.git
@@ -199,6 +199,7 @@ jobs:
           git clone --quiet --depth=1 https://github.com/WhiteNightChan/YTAppVersionSpoofer.git
           git clone --quiet --depth=1 https://github.com/WhiteNightChan/YTClassicDarkTheme.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YTIcons.git
+          git clone --quiet --depth=1 https://github.com/WhiteNightChan/YTTestTweak.git
           # git clone --quiet --depth=1 https://github.com/Tonwalter888/YTUHD.git
           git clone --quiet --depth=1 https://github.com/PoomSmart/YTVideoOverlay.git
           git clone --quiet --depth=1 https://github.com/fosterbarnes/YTweaks.git
@@ -219,6 +220,7 @@ jobs:
           (cd YTAppVersionSpoofer && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytavs.deb)
           (cd YTClassicDarkTheme && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytcdt.deb)
           (cd YTIcons && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytis.deb)
+          (cd YTTestTweak && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../yttt.deb)
           # (cd YTUHD && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytuhd.deb)
           (cd YTVideoOverlay && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytvo.deb)
           (cd YTweaks && make clean package DEBUG=0 FINALPACKAGE=1 && mv packages/*.deb ../ytws.deb)
